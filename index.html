@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A.M. | A.D.</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            background-color: white;
+            color: black;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            perspective: 1000px;
+        }
+        
+        #content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            line-height: 1.8;
+            font-size: 18px;
+            transform-style: preserve-3d;
+            transition: transform 0.1s ease-out;
+        }
+        
+        #content p {
+            margin-bottom: 0.5em;
+        }
+        
+        .italic {
+            font-style: italic;
+        }
+        
+        span#emailLink {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        
+        span#emailLink:hover {
+            text-decoration: underline;
+        }
+        
+        .letter {
+            display: inline-block;
+        }
+        
+        #emailReveal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            font-size: 18px;
+            font-family: 'Times New Roman', Times, serif;
+            line-height: 1.8;
+            opacity: 0;
+            z-index: 9999;
+            cursor: pointer;
+            transform-style: preserve-3d;
+            transition: transform 0.1s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <div id="emailReveal">andrew@am-ad.com</div>
+    <div id="content">
+        <p id="line1">A.M. | A.D.</p>
+        <p id="line2" class="italic">Everywhere, U.S.A</p>
+        <p id="line3"><span id="emailLink" style="cursor: pointer;">E-Mail</span></p>
+    </div>
+
+    <script>
+        const content = document.getElementById('content');
+        const emailLink = document.getElementById('emailLink');
+        const emailReveal = document.getElementById('emailReveal');
+        let isDragging = false;
+        let hasClicked = false;
+        let currentRotateX = 0;
+        let currentRotateY = 0;
+        
+        // 3D rotation functionality
+        document.addEventListener('mousedown', (e) => {
+            if (e.target !== emailLink && !hasClicked) {
+                isDragging = true;
+            } else if (hasClicked) {
+                isDragging = true;
+            }
+        });
+        
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+        
+        document.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                const centerX = window.innerWidth / 2;
+                const centerY = window.innerHeight / 2;
+                
+                const deltaX = e.clientX - centerX;
+                const deltaY = e.clientY - centerY;
+                
+                currentRotateY = (deltaX / centerX) * 180;
+                currentRotateX = -(deltaY / centerY) * 180;
+                
+                if (!hasClicked) {
+                    content.style.transform = `translate(-50%, -50%) rotateX(${currentRotateX}deg) rotateY(${currentRotateY}deg)`;
+                } else {
+                    emailReveal.style.transform = `translate(-50%, -50%) rotateX(${currentRotateX}deg) rotateY(${currentRotateY}deg)`;
+                }
+            }
+        });
+        
+        document.addEventListener('touchstart', (e) => {
+            if (e.target !== emailLink && !hasClicked) {
+                isDragging = true;
+            } else if (hasClicked) {
+                isDragging = true;
+            }
+        });
+        
+        document.addEventListener('touchend', () => {
+            isDragging = false;
+        });
+        
+        document.addEventListener('touchmove', (e) => {
+            if (isDragging) {
+                const touch = e.touches[0];
+                const centerX = window.innerWidth / 2;
+                const centerY = window.innerHeight / 2;
+                
+                const deltaX = touch.clientX - centerX;
+                const deltaY = touch.clientY - centerY;
+                
+                currentRotateY = (deltaX / centerX) * 180;
+                currentRotateX = -(deltaY / centerY) * 180;
+                
+                if (!hasClicked) {
+                    content.style.transform = `translate(-50%, -50%) rotateX(${currentRotateX}deg) rotateY(${currentRotateY}deg)`;
+                } else {
+                    emailReveal.style.transform = `translate(-50%, -50%) rotateX(${currentRotateX}deg) rotateY(${currentRotateY}deg)`;
+                }
+            }
+        });
+        
+        // Falling letters animation on email click
+        function splitIntoLetters(element) {
+            const text = element.textContent;
+            element.innerHTML = '';
+            
+            for (let char of text) {
+                const span = document.createElement('span');
+                span.className = 'letter';
+                span.textContent = char;
+                if (char === ' ') {
+                    span.style.width = '0.3em';
+                }
+                element.appendChild(span);
+            }
+        }
+        
+        emailLink.addEventListener('click', (e) => {
+            if (hasClicked) return;
+            hasClicked = true;
+            
+            // Position email at center with same transform as content
+            emailReveal.style.transform = `translate(-50%, -50%) rotateX(${currentRotateX}deg) rotateY(${currentRotateY}deg)`;
+            emailReveal.style.transformOrigin = 'center center';
+            
+            // Split all text into individual letters
+            const lines = [
+                document.getElementById('line1'),
+                document.getElementById('line2'),
+                document.getElementById('line3')
+            ];
+            
+            lines.forEach(splitIntoLetters);
+            
+            // Get all letters
+            const allLetters = document.querySelectorAll('.letter');
+            
+            // Wait for line2 letters to start falling before revealing email
+            const line2Letters = document.querySelectorAll('#line2 .letter');
+            const line2StartDelay = Array.from(allLetters).indexOf(line2Letters[0]) * 30;
+            
+            setTimeout(() => {
+                emailReveal.style.transition = 'opacity 0.8s ease-out';
+                emailReveal.style.opacity = '1';
+            }, line2StartDelay + 100);
+            
+            // Create clones and animate them
+            allLetters.forEach((letter, index) => {
+                setTimeout(() => {
+                    const rect = letter.getBoundingClientRect();
+                    const startX = rect.left;
+                    const startY = rect.top;
+                    
+                    // Create a clone outside the transformed parent
+                    const clone = document.createElement('div');
+                    clone.textContent = letter.textContent;
+                    clone.style.position = 'fixed';
+                    clone.style.left = startX + 'px';
+                    clone.style.top = startY + 'px';
+                    clone.style.fontFamily = 'Times New Roman, Times, serif';
+                    clone.style.fontSize = '18px';
+                    clone.style.pointerEvents = 'none';
+                    clone.style.zIndex = '1';
+                    if (letter.parentElement.classList.contains('italic')) {
+                        clone.style.fontStyle = 'italic';
+                    }
+                    
+                    document.body.appendChild(clone);
+                    
+                    // Hide original
+                    letter.style.opacity = '0';
+                    
+                    // Random physics values
+                    const randomXVelocity = (Math.random() - 0.5) * 3;
+                    const randomRotation = (Math.random() - 0.5) * 10;
+                    
+                    let posX = startX;
+                    let posY = startY;
+                    let velocityY = 0;
+                    let velocityX = randomXVelocity;
+                    let rotation = 0;
+                    const gravity = 0.5;
+                    
+                    // Apply the current 3D rotation to the falling letter
+                    const baseTransform = `rotateX(${currentRotateX}deg) rotateY(${currentRotateY}deg)`;
+                    
+                    function animate() {
+                        velocityY += gravity;
+                        posY += velocityY;
+                        posX += velocityX;
+                        rotation += randomRotation;
+                        
+                        clone.style.left = posX + 'px';
+                        clone.style.top = posY + 'px';
+                        clone.style.transform = `${baseTransform} rotate(${rotation}deg)`;
+                        
+                        if (posY < window.innerHeight + 100) {
+                            requestAnimationFrame(animate);
+                        }
+                    }
+                    
+                    animate();
+                }, index * 30);
+            });
+        });
+    </script>
+</body>
+</html>
