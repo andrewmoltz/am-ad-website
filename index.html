@@ -283,6 +283,8 @@
             try {
                 // Try multiple geolocation services
                 let data = null;
+                const startTime = Date.now();
+                const minLoadingTime = 1500; // 1.5 seconds minimum
                 
                 // First try: ip-api.com (free, no key needed, CORS friendly)
                 try {
@@ -290,6 +292,13 @@
                     data = await response.json();
                     
                     if (data.status === 'success' && data.city && data.regionName) {
+                        // Calculate remaining time to reach minimum loading time
+                        const elapsed = Date.now() - startTime;
+                        const remainingTime = Math.max(0, minLoadingTime - elapsed);
+                        
+                        // Wait for remaining time before showing results
+                        await new Promise(resolve => setTimeout(resolve, remainingTime));
+                        
                         // Clear the content div and create new structure
                         content.innerHTML = '';
                         
@@ -345,6 +354,13 @@
                     data = await response.json();
                     
                     if (data.city && data.region && data.latitude && data.longitude) {
+                        // Calculate remaining time to reach minimum loading time
+                        const elapsed = Date.now() - startTime;
+                        const remainingTime = Math.max(0, minLoadingTime - elapsed);
+                        
+                        // Wait for remaining time before showing results
+                        await new Promise(resolve => setTimeout(resolve, remainingTime));
+                        
                         // Clear the content div and create new structure
                         content.innerHTML = '';
                         
