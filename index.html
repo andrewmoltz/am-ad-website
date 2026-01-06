@@ -172,7 +172,7 @@
             }
         }
         
-        emailLink.addEventListener('click', (e) => {
+        function emailClickHandler(e) {
             if (hasClicked) return;
             hasClicked = true;
             
@@ -181,11 +181,7 @@
             emailReveal.style.transformOrigin = 'center center';
             
             // Split all text into individual letters
-            const lines = [
-                document.getElementById('line1'),
-                document.getElementById('line2'),
-                document.getElementById('line3')
-            ];
+            const lines = Array.from(content.querySelectorAll('p'));
             
             lines.forEach(splitIntoLetters);
             
@@ -193,8 +189,9 @@
             const allLetters = document.querySelectorAll('.letter');
             
             // Wait for line2 letters to start falling before revealing email
-            const line2Letters = document.querySelectorAll('#line2 .letter');
-            const line2StartDelay = Array.from(allLetters).indexOf(line2Letters[0]) * 30;
+            const middleLine = lines[Math.floor(lines.length / 2)];
+            const middleLineLetters = middleLine.querySelectorAll('.letter');
+            const line2StartDelay = Array.from(allLetters).indexOf(middleLineLetters[0]) * 30;
             
             setTimeout(() => {
                 emailReveal.style.transition = 'opacity 0.8s ease-out';
@@ -265,16 +262,23 @@
                     animate();
                 }, index * 30);
             });
-        });
+        }
+        
+        // Attach initial email click handler
+        emailLink.addEventListener('click', emailClickHandler);
         
         // Location detection on click
         locationLine.addEventListener('click', async (e) => {
             if (locationClicked || hasClicked) return;
             locationClicked = true;
             
-            // Show loading state
+            // Hide all other text and show only "Locating..."
+            document.getElementById('line1').style.opacity = '0';
+            document.getElementById('line3').style.opacity = '0';
+            
             const originalText = locationLine.textContent;
             locationLine.textContent = 'Locating...';
+            locationLine.style.fontStyle = 'normal';
             
             try {
                 // Try multiple geolocation services
@@ -286,7 +290,49 @@
                     data = await response.json();
                     
                     if (data.status === 'success' && data.city && data.regionName) {
-                        locationLine.textContent = `${data.city}, ${data.regionName}`;
+                        // Clear the content div and create new structure
+                        content.innerHTML = '';
+                        
+                        // Create coordinates line
+                        const coordsLine = document.createElement('p');
+                        coordsLine.textContent = `${data.lat.toFixed(4)}°N, ${data.lon.toFixed(4)}°W`;
+                        coordsLine.style.opacity = '0';
+                        coordsLine.style.transition = 'opacity 1s ease-in';
+                        content.appendChild(coordsLine);
+                        
+                        // Create city/state line
+                        const cityLine = document.createElement('p');
+                        cityLine.className = 'italic';
+                        cityLine.textContent = `${data.city}, ${data.regionName}`;
+                        cityLine.style.opacity = '0';
+                        cityLine.style.transition = 'opacity 1s ease-in';
+                        cityLine.style.transitionDelay = '0.3s';
+                        content.appendChild(cityLine);
+                        
+                        // Create email line
+                        const newEmailLine = document.createElement('p');
+                        const newEmailLink = document.createElement('span');
+                        newEmailLink.id = 'emailLink';
+                        newEmailLink.textContent = 'E-Mail';
+                        newEmailLink.style.cursor = 'pointer';
+                        newEmailLink.style.opacity = '0';
+                        newEmailLink.style.transition = 'opacity 1s ease-in';
+                        newEmailLink.style.transitionDelay = '0.6s';
+                        newEmailLine.appendChild(newEmailLink);
+                        content.appendChild(newEmailLine);
+                        
+                        // Trigger fade in
+                        setTimeout(() => {
+                            coordsLine.style.opacity = '1';
+                            cityLine.style.opacity = '1';
+                            newEmailLink.style.opacity = '1';
+                        }, 100);
+                        
+                        // Re-attach email click handler to new element
+                        newEmailLink.addEventListener('click', emailClickHandler);
+                        
+                        // Reset location clicked for potential future interactions
+                        locationClicked = false;
                         return;
                     }
                 } catch (e) {
@@ -298,8 +344,49 @@
                     const response = await fetch('https://ipapi.co/json/');
                     data = await response.json();
                     
-                    if (data.city && data.region) {
-                        locationLine.textContent = `${data.city}, ${data.region}`;
+                    if (data.city && data.region && data.latitude && data.longitude) {
+                        // Clear the content div and create new structure
+                        content.innerHTML = '';
+                        
+                        // Create coordinates line
+                        const coordsLine = document.createElement('p');
+                        coordsLine.textContent = `${data.latitude.toFixed(4)}°N, ${data.longitude.toFixed(4)}°W`;
+                        coordsLine.style.opacity = '0';
+                        coordsLine.style.transition = 'opacity 1s ease-in';
+                        content.appendChild(coordsLine);
+                        
+                        // Create city/state line
+                        const cityLine = document.createElement('p');
+                        cityLine.className = 'italic';
+                        cityLine.textContent = `${data.city}, ${data.region}`;
+                        cityLine.style.opacity = '0';
+                        cityLine.style.transition = 'opacity 1s ease-in';
+                        cityLine.style.transitionDelay = '0.3s';
+                        content.appendChild(cityLine);
+                        
+                        // Create email line
+                        const newEmailLine = document.createElement('p');
+                        const newEmailLink = document.createElement('span');
+                        newEmailLink.id = 'emailLink';
+                        newEmailLink.textContent = 'E-Mail';
+                        newEmailLink.style.cursor = 'pointer';
+                        newEmailLink.style.opacity = '0';
+                        newEmailLink.style.transition = 'opacity 1s ease-in';
+                        newEmailLink.style.transitionDelay = '0.6s';
+                        newEmailLine.appendChild(newEmailLink);
+                        content.appendChild(newEmailLine);
+                        
+                        // Trigger fade in
+                        setTimeout(() => {
+                            coordsLine.style.opacity = '1';
+                            cityLine.style.opacity = '1';
+                            newEmailLink.style.opacity = '1';
+                        }, 100);
+                        
+                        // Re-attach email click handler to new element
+                        newEmailLink.addEventListener('click', emailClickHandler);
+                        
+                        locationClicked = false;
                         return;
                     }
                 } catch (e) {
@@ -308,11 +395,17 @@
                 
                 // If all fail, revert
                 locationLine.textContent = originalText;
+                locationLine.style.fontStyle = 'italic';
+                document.getElementById('line1').style.opacity = '1';
+                document.getElementById('line3').style.opacity = '1';
                 locationClicked = false;
                 
             } catch (error) {
                 console.error('Location detection failed:', error);
                 locationLine.textContent = originalText;
+                locationLine.style.fontStyle = 'italic';
+                document.getElementById('line1').style.opacity = '1';
+                document.getElementById('line3').style.opacity = '1';
                 locationClicked = false;
             }
         });
