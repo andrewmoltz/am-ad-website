@@ -74,7 +74,7 @@
     <div id="emailReveal">andrew@am-ad.com</div>
     <div id="content">
         <p id="line1">A.M. | A.D.</p>
-        <p id="line2" class="italic">Everywhere, U.S.A.</p>
+        <p id="line2" class="italic" style="cursor: pointer;">Everywhere, U.S.A.</p>
         <p id="line3"><span id="emailLink" style="cursor: pointer;">E-Mail</span></p>
     </div>
 
@@ -82,14 +82,19 @@
         const content = document.getElementById('content');
         const emailLink = document.getElementById('emailLink');
         const emailReveal = document.getElementById('emailReveal');
+        const locationLine = document.getElementById('line2');
         let isDragging = false;
         let hasClicked = false;
         let currentRotateX = 0;
         let currentRotateY = 0;
+        let locationClicked = false;
         
         // 3D rotation functionality
         document.addEventListener('mousedown', (e) => {
-            if (e.target !== emailLink && !hasClicked) {
+            if (e.target === locationLine && !locationClicked) {
+                // Don't start dragging, let the location click handler work
+                return;
+            } else if (e.target !== emailLink && !hasClicked) {
                 isDragging = true;
             } else if (hasClicked) {
                 isDragging = true;
@@ -200,8 +205,13 @@
             allLetters.forEach((letter, index) => {
                 setTimeout(() => {
                     const rect = letter.getBoundingClientRect();
-                    const startX = rect.left;
-                    const startY = rect.top;
+                    
+                    // Get the computed transform to account for 3D rotation
+                    const computedStyle = window.getComputedStyle(letter);
+                    const transform = computedStyle.transform;
+                    
+                    const startX = rect.left + rect.width / 2; // Center of letter
+                    const startY = rect.top + rect.height / 2; // Center of letter
                     
                     // Create a clone outside the transformed parent
                     const clone = document.createElement('div');
@@ -209,6 +219,7 @@
                     clone.style.position = 'fixed';
                     clone.style.left = startX + 'px';
                     clone.style.top = startY + 'px';
+                    clone.style.transform = 'translate(-50%, -50%)'; // Center the clone
                     clone.style.fontFamily = 'Times New Roman, Times, serif';
                     clone.style.fontSize = '18px';
                     clone.style.pointerEvents = 'none';
@@ -231,7 +242,7 @@
                     let velocityY = 0;
                     let velocityX = randomXVelocity;
                     let rotation = 0;
-                    const gravity = 0.5;
+                    const gravity = 0.3;
                     
                     // Apply the current 3D rotation to the falling letter
                     const baseTransform = `rotateX(${currentRotateX}deg) rotateY(${currentRotateY}deg)`;
@@ -244,7 +255,7 @@
                         
                         clone.style.left = posX + 'px';
                         clone.style.top = posY + 'px';
-                        clone.style.transform = `${baseTransform} rotate(${rotation}deg)`;
+                        clone.style.transform = `${baseTransform} translate(-50%, -50%) rotate(${rotation}deg)`;
                         
                         if (posY < window.innerHeight + 100) {
                             requestAnimationFrame(animate);
@@ -254,6 +265,56 @@
                     animate();
                 }, index * 30);
             });
+        });
+        
+        // Location detection on click
+        locationLine.addEventListener('click', async (e) => {
+            if (locationClicked || hasClicked) return;
+            locationClicked = true;
+            
+            // Show loading state
+            const originalText = locationLine.textContent;
+            locationLine.textContent = 'Locating...';
+            
+            try {
+                // Try multiple geolocation services
+                let data = null;
+                
+                // First try: ip-api.com (free, no key needed, CORS friendly)
+                try {
+                    const response = await fetch('http://ip-api.com/json/');
+                    data = await response.json();
+                    
+                    if (data.status === 'success' && data.city && data.regionName) {
+                        locationLine.textContent = `${data.city}, ${data.regionName}`;
+                        return;
+                    }
+                } catch (e) {
+                    console.log('ip-api failed, trying backup...');
+                }
+                
+                // Backup: ipapi.co
+                try {
+                    const response = await fetch('https://ipapi.co/json/');
+                    data = await response.json();
+                    
+                    if (data.city && data.region) {
+                        locationLine.textContent = `${data.city}, ${data.region}`;
+                        return;
+                    }
+                } catch (e) {
+                    console.log('ipapi.co failed');
+                }
+                
+                // If all fail, revert
+                locationLine.textContent = originalText;
+                locationClicked = false;
+                
+            } catch (error) {
+                console.error('Location detection failed:', error);
+                locationLine.textContent = originalText;
+                locationClicked = false;
+            }
         });
     </script>
 </body>
