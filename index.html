@@ -54,24 +54,10 @@
         .letter {
             display: inline-block;
         }
-        
-        #emailReveal {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            font-size: 18px;
-            font-family: 'Times New Roman', Times, serif;
-            line-height: 1.8;
-            opacity: 0;
-            z-index: 9999;
-            cursor: pointer;
-            transform-style: preserve-3d;
-            transition: transform 0.1s ease-out;
-        }
     </style>
 </head>
 <body>
-    <div id="emailReveal">andrew@am-ad.com</div>
+
     <div id="content">
         <p id="line1">A.M. | A.D.</p>
         <p id="line2" class="italic" style="cursor: pointer;">Everywhere, U.S.A.</p>
@@ -81,7 +67,7 @@
     <script>
         const content = document.getElementById('content');
         const emailLink = document.getElementById('emailLink');
-        const emailReveal = document.getElementById('emailReveal');
+        let emailReveal = null;
         const locationLine = document.getElementById('line2');
         let isDragging = false;
         let hasClicked = false;
@@ -175,6 +161,27 @@
         function emailClickHandler(e) {
             if (hasClicked) return;
             hasClicked = true;
+            
+            // Create email reveal element dynamically
+            if (!emailReveal) {
+                emailReveal = document.createElement('a');
+                emailReveal.href = 'mailto:andrew@am-ad.com';
+                emailReveal.textContent = 'andrew@am-ad.com';
+                emailReveal.style.position = 'fixed';
+                emailReveal.style.top = '50%';
+                emailReveal.style.left = '50%';
+                emailReveal.style.fontSize = '18px';
+                emailReveal.style.fontFamily = 'Times New Roman, Times, serif';
+                emailReveal.style.lineHeight = '1.8';
+                emailReveal.style.opacity = '0';
+                emailReveal.style.zIndex = '9999';
+                emailReveal.style.cursor = 'pointer';
+                emailReveal.style.transformStyle = 'preserve-3d';
+                emailReveal.style.transition = 'transform 0.1s ease-out';
+                emailReveal.style.color = 'black';
+                emailReveal.style.textDecoration = 'none';
+                document.body.appendChild(emailReveal);
+            }
             
             // Position email at center with same transform as content
             emailReveal.style.transform = `translate(-50%, -50%) rotateX(${currentRotateX}deg) rotateY(${currentRotateY}deg)`;
